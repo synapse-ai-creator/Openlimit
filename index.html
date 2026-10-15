@@ -35,6 +35,13 @@
     .counter {
       font-size: 1.1rem;
       color: #888;
+      margin-bottom: 0.5rem;
+      letter-spacing: 0.05em;
+    }
+
+    .waiting-counter {
+      font-size: 0.95rem;
+      color: #aaa;
       margin-bottom: 0.8rem;
       letter-spacing: 0.05em;
     }
@@ -149,7 +156,7 @@
     }
   </style>
 
-  <!-- Firebase SDK の読み込み -->
+  <!-- Firebase SDK -->
   <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
 </head>
@@ -159,6 +166,8 @@
   <div id="screen-locked" style="text-align: center;">
     <div class="brand-title">OpenLimit</div>
     <div class="counter">累計OPEN回数: <span id="total-count-val">...</span></div>
+    <!-- リアルタイム待機人数の表示エリア -->
+    <div class="waiting-counter">現在待機中のユーザー: <span id="waiting-users-val" style="color: #007aff; font-weight:700;">0</span> 人</div>
     
     <div class="video-preview-box">
       <iframe 
@@ -170,105 +179,4 @@
     </div>
 
     <div id="status-display" class="status">OPEN (<span id="active-users-val">0</span>/10)</div>
-    <button id="main-btn" class="btn">扉を開ける</button>
-  </div>
-
-  <!-- 画面2：30秒間の開放画面 -->
-  <div id="screen-unlocked" class="hidden" style="text-align: center;">
-    <div class="brand-title">OpenLimit</div>
-    <div class="counter" style="color: #32d74b; font-weight:700;">CONGRATULATIONS!</div>
-    <div id="opener-number" style="font-size: 1.3rem; font-weight: 700; margin-bottom: 0.5rem;">あなたは ... 人目の OPENer です！</div>
-    
-    <div class="mosaic-box">
-      <img src="https://via.placeholder.com/400/111111/ffffff?text=OpenLimit" alt="OpenLimit Content">
-    </div>
-    
-    <div id="timer" class="timer">00:30</div>
-  </div>
-
-  <div class="footer-note">OpenLimit &copy; 2026 — 10 Users / 30 Seconds Limit</div>
-
-  <script>
-    // Firebaseの初期化
-    const firebaseConfig = {
-      databaseURL: "https://openlimit-f7d81-default-rtdb.firebaseio.com"
-    };
-    firebase.initializeApp(firebaseConfig);
-    const db = firebase.database();
-
-    const MAX_USERS = 10;
-    let currentGlobalOpens = 0;
-    let currentActiveUsers = 0;
-    let mySessionRef = null;
-
-    // 1. 累計OPEN数のリアルタイム監視（世界共通で常に同期）
-    db.ref('totalOpens').on('value', (snapshot) => {
-      currentGlobalOpens = snapshot.val() || 0;
-      document.getElementById('total-count-val').innerText = currentGlobalOpens.toLocaleString();
-    });
-
-    // 2. 現在同時接続人数のリアルタイム監視
-    db.ref('activeSessions').on('value', (snapshot) => {
-      const sessions = snapshot.val() || {};
-      currentActiveUsers = Object.keys(sessions).length;
-      
-      const userValEl = document.getElementById('active-users-val');
-      const statusEl = document.getElementById('status-display');
-      const btnEl = document.getElementById('main-btn');
-
-      userValEl.innerText = currentActiveUsers;
-
-      if (currentActiveUsers >= MAX_USERS) {
-        statusEl.innerText = `FULL (${currentActiveUsers}/10)`;
-        statusEl.classList.add('status-full');
-        btnEl.disabled = true;
-        btnEl.innerText = '満員です';
-      } else {
-        statusEl.innerHTML = `OPEN (<span id="active-users-val">${currentActiveUsers}</span>/10)`;
-        statusEl.classList.remove('status-full');
-        btnEl.disabled = false;
-        btnEl.innerText = '扉を開ける';
-      }
-    });
-
-    // 「扉を開ける」クリックイベント
-    document.getElementById('main-btn').addEventListener('click', function() {
-      if (currentActiveUsers >= MAX_USERS) {
-        alert('現在満員です（10/10）。時間をおいて再度お試しください。');
-        return;
-      }
-
-      // 累計数を1増やす（Firebaseのカウンターを確実加算）
-      db.ref('totalOpens').transaction((current) => {
-        return (current || 0) + 1;
-      });
-
-      // 自分が部屋に入ったセッションを作成（自動削除機能付き）
-      mySessionRef = db.ref('activeSessions').push();
-      mySessionRef.set(true);
-      mySessionRef.onDisconnect().remove(); // 接続が切れたら自動退出
-
-      document.getElementById('screen-locked').classList.add('hidden');
-      document.getElementById('screen-unlocked').classList.remove('hidden');
-      document.getElementById('opener-number').innerText = `あなたは ${currentGlobalOpens + 1} 人目の OPENer です！`;
-
-      // 30秒タイマー起動
-      let timeLeft = 30;
-      const timerEl = document.getElementById('timer');
-      
-      const interval = setInterval(() => {
-        timeLeft--;
-        let sec = timeLeft < 10 ? '0' + timeLeft : timeLeft;
-        timerEl.innerText = `00:${sec}`;
-
-        if (timeLeft <= 0) {
-          clearInterval(interval);
-          if (mySessionRef) mySessionRef.remove(); // 退出処理
-          alert('30秒が経過しました。強制ログアウトします。');
-          location.reload();
-        }
-      }, 1000);
-    });
-  </script>
-</body>
-</html>
+    <button id="main-btn"
