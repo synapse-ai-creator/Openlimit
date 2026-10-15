@@ -35,14 +35,14 @@
     .counter {
       font-size: 1.1rem;
       color: #888;
-      margin-bottom: 1.5rem;
+      margin-bottom: 1rem;
       letter-spacing: 0.05em;
     }
 
     .status {
       font-size: 1.8rem;
       font-weight: 700;
-      margin-bottom: 1.5rem;
+      margin-bottom: 1rem;
       letter-spacing: 0.05em;
       color: #32d74b;
     }
@@ -59,6 +59,7 @@
       letter-spacing: 0.1em;
       transition: all 0.2s ease;
       box-shadow: 0 4px 20px rgba(255, 255, 255, 0.15);
+      margin-top: 1rem;
     }
 
     .btn:hover {
@@ -75,14 +76,15 @@
       text-shadow: 0 0 20px rgba(255, 59, 48, 0.4);
     }
 
-    .mosaic-box {
-      width: 320px;
-      max-width: 85vw;
-      height: 320px;
-      max-height: 85vw;
+    /* 縦長ショート動画に最適化させた埋め込みエリア（比率 9:16） */
+    .media-box {
+      width: 240px;
+      height: 426px;
+      max-width: 80vw;
+      max-height: 50vh;
       background: #111;
       border-radius: 20px;
-      margin: 1rem auto;
+      margin: 0.5rem auto;
       display: flex;
       align-items: center;
       justify-content: center;
@@ -92,10 +94,10 @@
       overflow: hidden;
     }
 
-    .mosaic-box img {
+    .media-box iframe {
       width: 100%;
       height: 100%;
-      object-fit: cover;
+      border: none;
       border-radius: 20px;
     }
 
@@ -114,10 +116,21 @@
 </head>
 <body>
 
-  <!-- 画面1：待機画面 -->
+  <!-- 画面1：待機画面（開ける前から動画を設置） -->
   <div id="screen-locked" style="text-align: center;">
     <div class="brand-title">OpenLimit</div>
     <div class="counter">累計OPEN回数: <span id="total-count-val">0</span></div>
+    
+    <!-- 開く前用のYouTube動画埋め込み -->
+    <div class="media-box">
+      <iframe 
+        src="https://www.youtube.com/embed/FUaDAHyyvPM?autoplay=1&mute=1&loop=1&playlist=FUaDAHyyvPM&controls=0&rel=0" 
+        title="LUCKYオモーチー YouTube Short Preview" 
+        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
+        allowfullscreen>
+      </iframe>
+    </div>
+
     <div class="status">OPEN (0/10)</div>
     <button id="main-btn" class="btn">扉を開ける</button>
   </div>
@@ -128,8 +141,15 @@
     <div class="counter" style="color: #32d74b; font-weight:700;">CONGRATULATIONS!</div>
     <div id="opener-number" style="font-size: 1.3rem; font-weight: 700; margin-bottom: 0.5rem;">あなたは 1 人目の OPENer です！</div>
     
-    <div class="mosaic-box">
-      <img src="https://via.placeholder.com/400/111111/ffffff?text=OpenLimit" alt="OpenLimit Content">
+    <!-- 開放後のメイン動画（音声つき） -->
+    <div class="media-box">
+      <iframe 
+        id="yt-player-unlocked"
+        src="" 
+        title="LUCKYオモーチー YouTube Short Main" 
+        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
+        allowfullscreen>
+      </iframe>
     </div>
     
     <div id="timer" class="timer">00:30</div>
@@ -138,17 +158,19 @@
   <div class="footer-note">OpenLimit &copy; 2026 — 10 Users / 30 Seconds Limit</div>
 
   <script>
-    // カウントの読み込み・初期化
+    const VIDEO_ID = 'FUaDAHyyvPM';
+
     let totalOpens = parseInt(localStorage.getItem('openlimit_total_opens') || '0', 10);
     document.getElementById('total-count-val').innerText = totalOpens.toLocaleString();
 
-    // ボタンのクリックイベント登録（絶対に動く記述）
     document.getElementById('main-btn').addEventListener('click', function() {
-      // カウントアップ＆保存
       totalOpens++;
       localStorage.setItem('openlimit_total_opens', totalOpens);
 
-      // 画面切り替え
+      // 開放後の動画プレイヤーをロード（音あり再生対応）
+      const iframeUnlocked = document.getElementById('yt-player-unlocked');
+      iframeUnlocked.src = `https://www.youtube.com/embed/${VIDEO_ID}?autoplay=1&loop=1&playlist=${VIDEO_ID}&controls=1&rel=0`;
+
       document.getElementById('screen-locked').classList.add('hidden');
       document.getElementById('screen-unlocked').classList.remove('hidden');
       document.getElementById('opener-number').innerText = `あなたは ${totalOpens.toLocaleString()} 人目の OPENer です！`;
