@@ -48,6 +48,10 @@
       color: #32d74b;
     }
 
+    .status-full {
+      color: #ff453a !important;
+    }
+
     .btn {
       padding: 16px 48px;
       font-size: 1.1rem;
@@ -63,7 +67,14 @@
       margin-top: 0.5rem;
     }
 
-    .btn:hover {
+    .btn:disabled {
+      background: #444444;
+      color: #888888;
+      cursor: not-allowed;
+      box-shadow: none;
+    }
+
+    .btn:hover:not(:disabled) {
       transform: translateY(-2px);
       box-shadow: 0 6px 25px rgba(255, 255, 255, 0.25);
     }
@@ -77,7 +88,6 @@
       text-shadow: 0 0 20px rgba(255, 59, 48, 0.4);
     }
 
-    /* 待機画面用の動画エリア（9:16比率） */
     .video-preview-box {
       width: 220px;
       height: 390px;
@@ -102,7 +112,6 @@
       border-radius: 20px;
     }
 
-    /* 開放後の画像エリア（大きめのスクエア表示） */
     .mosaic-box {
       width: 320px;
       max-width: 85vw;
@@ -139,6 +148,10 @@
       letter-spacing: 0.05em;
     }
   </style>
+
+  <!-- Firebase SDK の読み込み -->
+  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
 </head>
 <body>
 
@@ -147,7 +160,6 @@
     <div class="brand-title">OpenLimit</div>
     <div class="counter">累計OPEN回数: <span id="total-count-val">...</span></div>
     
-    <!-- 開く前専用のYouTube動画プレビュー -->
     <div class="video-preview-box">
       <iframe 
         src="https://www.youtube.com/embed/FUaDAHyyvPM?autoplay=1&mute=1&loop=1&playlist=FUaDAHyyvPM&controls=0&rel=0" 
@@ -157,7 +169,7 @@
       </iframe>
     </div>
 
-    <div class="status">OPEN (0/10)</div>
+    <div id="status-display" class="status">OPEN (<span id="active-users-val">0</span>/10)</div>
     <button id="main-btn" class="btn">扉を開ける</button>
   </div>
 
@@ -167,7 +179,6 @@
     <div class="counter" style="color: #32d74b; font-weight:700;">CONGRATULATIONS!</div>
     <div id="opener-number" style="font-size: 1.3rem; font-weight: 700; margin-bottom: 0.5rem;">あなたは ... 人目の OPENer です！</div>
     
-    <!-- 開放後の大型画像表示エリア -->
     <div class="mosaic-box">
       <img src="https://via.placeholder.com/400/111111/ffffff?text=OpenLimit" alt="OpenLimit Content">
     </div>
@@ -178,51 +189,68 @@
   <div class="footer-note">OpenLimit &copy; 2026 — 10 Users / 30 Seconds Limit</div>
 
   <script>
-    // Firebase Database URL
-    const DB_URL = 'https://openlimit-f7d81-default-rtdb.firebaseio.com';
+    // Firebaseの初期化
+    const firebaseConfig = {
+      databaseURL: "https://openlimit-f7d81-default-rtdb.firebaseio.com"
+    };
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.database();
 
-    let globalOpens = 0;
+    const MAX_USERS = 10;
+    let currentGlobalOpens = 0;
+    let currentActiveUsers = 0;
+    let mySessionRef = null;
 
-    // データベースから最新のリアルタイムカウントを取得
-    async function fetchGlobalCount() {
-      try {
-        const res = await fetch(`${DB_URL}/totalOpens.json`);
-        const data = await res.json();
-        if (data !== null) {
-          globalOpens = data;
-          document.getElementById('total-count-val').innerText = globalOpens.toLocaleString();
-        }
-      } catch (e) {
-        console.error('DB Fetch Error:', e);
+    // 1. 累計OPEN数のリアルタイム監視（世界共通で常に同期）
+    db.ref('totalOpens').on('value', (snapshot) => {
+      currentGlobalOpens = snapshot.val() || 0;
+      document.getElementById('total-count-val').innerText = currentGlobalOpens.toLocaleString();
+    });
+
+    // 2. 現在同時接続人数のリアルタイム監視
+    db.ref('activeSessions').on('value', (snapshot) => {
+      const sessions = snapshot.val() || {};
+      currentActiveUsers = Object.keys(sessions).length;
+      
+      const userValEl = document.getElementById('active-users-val');
+      const statusEl = document.getElementById('status-display');
+      const btnEl = document.getElementById('main-btn');
+
+      userValEl.innerText = currentActiveUsers;
+
+      if (currentActiveUsers >= MAX_USERS) {
+        statusEl.innerText = `FULL (${currentActiveUsers}/10)`;
+        statusEl.classList.add('status-full');
+        btnEl.disabled = true;
+        btnEl.innerText = '満員です';
+      } else {
+        statusEl.innerHTML = `OPEN (<span id="active-users-val">${currentActiveUsers}</span>/10)`;
+        statusEl.classList.remove('status-full');
+        btnEl.disabled = false;
+        btnEl.innerText = '扉を開ける';
       }
-    }
+    });
 
-    // カウントを世界共有DBに加算保存
-    async function incrementGlobalCount() {
-      globalOpens++;
-      document.getElementById('total-count-val').innerText = globalOpens.toLocaleString();
-
-      try {
-        await fetch(`${DB_URL}/totalOpens.json`, {
-          method: 'PUT',
-          body: JSON.stringify(globalOpens)
-        });
-      } catch (e) {
-        console.error('DB Sync Error:', e);
+    // 「扉を開ける」クリックイベント
+    document.getElementById('main-btn').addEventListener('click', function() {
+      if (currentActiveUsers >= MAX_USERS) {
+        alert('現在満員です（10/10）。時間をおいて再度お試しください。');
+        return;
       }
-    }
 
-    // 初回読み込み＆2秒ごとに全端末で最新カウントをリアルタイム同期
-    fetchGlobalCount();
-    setInterval(fetchGlobalCount, 2000);
+      // 累計数を1増やす（Firebaseのカウンターを確実加算）
+      db.ref('totalOpens').transaction((current) => {
+        return (current || 0) + 1;
+      });
 
-    document.getElementById('main-btn').addEventListener('click', async function() {
-      // データベースのカウントを加算
-      await incrementGlobalCount();
+      // 自分が部屋に入ったセッションを作成（自動削除機能付き）
+      mySessionRef = db.ref('activeSessions').push();
+      mySessionRef.set(true);
+      mySessionRef.onDisconnect().remove(); // 接続が切れたら自動退出
 
       document.getElementById('screen-locked').classList.add('hidden');
       document.getElementById('screen-unlocked').classList.remove('hidden');
-      document.getElementById('opener-number').innerText = `あなたは ${globalOpens.toLocaleString()} 人目の OPENer です！`;
+      document.getElementById('opener-number').innerText = `あなたは ${currentGlobalOpens + 1} 人目の OPENer です！`;
 
       // 30秒タイマー起動
       let timeLeft = 30;
@@ -235,6 +263,7 @@
 
         if (timeLeft <= 0) {
           clearInterval(interval);
+          if (mySessionRef) mySessionRef.remove(); // 退出処理
           alert('30秒が経過しました。強制ログアウトします。');
           location.reload();
         }
