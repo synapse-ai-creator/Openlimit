@@ -35,7 +35,7 @@
     .counter {
       font-size: 1.1rem;
       color: #888;
-      margin-bottom: 0.5rem;
+      margin-bottom: 0.4rem;
       letter-spacing: 0.05em;
     }
 
@@ -166,7 +166,6 @@
   <div id="screen-locked" style="text-align: center;">
     <div class="brand-title">OpenLimit</div>
     <div class="counter">累計OPEN回数: <span id="total-count-val">...</span></div>
-    <!-- リアルタイム待機人数の表示エリア -->
     <div class="waiting-counter">現在待機中のユーザー: <span id="waiting-users-val" style="color: #007aff; font-weight:700;">0</span> 人</div>
     
     <div class="video-preview-box">
@@ -178,5 +177,6 @@
       </iframe>
     </div>
 
-    <div id="status-display" class="status">OPEN (<span id="active-users-val">0</span>/10)</div>
-    <button id="main-btn"
+    <!-- ここを固定構造にしてボタン消失バグを防止 -->
+    <div id="status-display" class="status">
+      <span id="status-text">OPEN</span> (<span id="active-users-val">0</span>/10
