@@ -99,12 +99,11 @@
       overflow: hidden;
     }
 
-    .mosaic-face {
+    .mosaic-box img {
       width: 100%;
       height: 100%;
-      background: radial-gradient(circle, #ffe0bd 30%, #4a2e18 90%);
-      filter: blur(14px) contrast(150%);
-      transform: scale(1.2);
+      object-fit: cover;
+      border-radius: 16px;
     }
 
     .hidden {
@@ -125,8 +124,8 @@
   <!-- 画面1：待機 / 満員（FULL）画面 -->
   <div id="screen-locked" style="text-align: center;">
     <div class="brand-title">OpenLimit</div>
-    <div id="total-count-label" class="counter">Total OPENs: <span id="total-count">1,482,903</span></div>
-    <div id="status-label" class="status status-locked">FULL (10/10)</div>
+    <div id="total-count-label" class="counter">Total OPENs: <span id="total-count">0</span></div>
+    <div id="status-label" class="status status-unlocked">OPEN (9/10)</div>
     <button id="open-btn" class="btn" onclick="tryOpen()">TRY TO OPEN</button>
   </div>
 
@@ -134,11 +133,11 @@
   <div id="screen-unlocked" class="hidden" style="text-align: center;">
     <div class="brand-title">OpenLimit</div>
     <div id="congrats-label" class="counter" style="color: #32d74b;">CONGRATULATIONS!</div>
-    <div id="opener-number" style="font-size: 1.4rem; font-weight: 700;">You are the #1,482,904 OPENer</div>
+    <div id="opener-number" style="font-size: 1.4rem; font-weight: 700;">You are the #1 OPENer</div>
     
-    <!-- モザイク画像エリア -->
+    <!-- 画像エリア（画像のURLまたはファイル名に書き換えてください） -->
     <div class="mosaic-box">
-      <div class="mosaic-face"></div>
+      <img id="display-image" src="https://via.placeholder.com/180/111111/ffffff?text=OpenLimit" alt="OpenLimit Content">
     </div>
     
     <div id="timer" class="timer">00:30</div>
@@ -149,8 +148,8 @@
   <script>
     const MAX_USERS = 10;
     const LIMIT_SECONDS = 30; // 30秒強制終了
-    let currentUsers = 9;    // デモ用初期値（満員）
-    let totalOpens = 0;
+    let currentUsers = 9;     // 最初は1枠空けた状態（9/10）
+    let totalOpens = 0;       // 0回からスタート
     let userLang = navigator.language.startsWith('ja') ? 'ja' : 'en';
 
     // 初期表示設定
@@ -176,8 +175,8 @@
       document.getElementById('screen-unlocked').classList.remove('hidden');
 
       if (userLang === 'ja') {
-        document.getElementById('congrats-label').innerText = 'おめでとうございます！';
-        document.getElementById('opener-number').innerText = `あなたは 第 ${totalOpens.toLocaleString()} 目のOPEN者です`;
+        document.getElementById('congrats-label').innerText = 'CONGRATULATIONS!';
+        document.getElementById('opener-number').innerText = `あなたは ${totalOpens.toLocaleString()} 人目の OPENer です！`;
       } else {
         document.getElementById('opener-number').innerText = `You are the #${totalOpens.toLocaleString()} OPENer`;
       }
