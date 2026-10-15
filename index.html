@@ -151,21 +151,27 @@
   <script>
     const MAX_USERS = 10;
     const LIMIT_SECONDS = 30;
-    let currentUsers = 0; // 0人スタート
+    let currentUsers = 0;
 
     let totalOpens = parseInt(localStorage.getItem('openlimit_total_opens') || '0', 10);
     let userLang = navigator.language.startsWith('ja') ? 'ja' : 'en';
 
-    updateCounterUI();
+    window.onload = function() {
+      updateCounterUI();
+    };
 
     function updateCounterUI() {
       const countEl = document.getElementById('total-count');
       if (countEl) countEl.innerText = totalOpens.toLocaleString();
-      document.getElementById('current-user-count').innerText = currentUsers;
+      
+      const userCountEl = document.getElementById('current-user-count');
+      if (userCountEl) userCountEl.innerText = currentUsers;
 
       if (userLang === 'ja') {
-        document.getElementById('total-count-label').innerHTML = `累計OPEN回数: <span id="total-count">${totalOpens.toLocaleString()}</span>`;
-        document.getElementById('open-btn').innerText = '扉を開ける';
+        const labelEl = document.getElementById('total-count-label');
+        if (labelEl) labelEl.innerHTML = `累計OPEN回数: <span id="total-count">${totalOpens.toLocaleString()}</span>`;
+        const btnEl = document.getElementById('open-btn');
+        if (btnEl) btnEl.innerText = '扉を開ける';
       }
     }
 
@@ -191,7 +197,4 @@
         document.getElementById('congrats-label').innerText = 'CONGRATULATIONS!';
         document.getElementById('opener-number').innerText = `あなたは ${totalOpens.toLocaleString()} 人目の OPENer です！`;
       } else {
-        document.getElementById('opener-number').innerText = `You are the #${totalOpens.toLocaleString()} OPENer`;
-      }
-
-      let timeLeft
+        document.getElementById('opener-number').innerText = `You are the #${totalOpens.toLocaleString
