@@ -86,7 +86,6 @@
       text-shadow: 0 0 20px rgba(255, 59, 48, 0.4);
     }
 
-    /* 画像表示エリアを大きく（320px×320px）変更 */
     .mosaic-box {
       width: 320px;
       max-width: 85vw;
@@ -126,11 +125,11 @@
 </head>
 <body>
 
-  <!-- 画面1：待機 / 満員（FULL）画面 -->
+  <!-- 画面1：待機画面 -->
   <div id="screen-locked" style="text-align: center;">
     <div class="brand-title">OpenLimit</div>
     <div id="total-count-label" class="counter">Total OPENs: <span id="total-count">0</span></div>
-    <div id="status-label" class="status status-unlocked">OPEN (9/10)</div>
+    <div id="status-label" class="status status-unlocked">OPEN (<span id="current-user-count">0</span>/10)</div>
     <button id="open-btn" class="btn" onclick="tryOpen()">TRY TO OPEN</button>
   </div>
 
@@ -140,7 +139,6 @@
     <div id="congrats-label" class="counter" style="color: #32d74b; font-weight:700;">CONGRATULATIONS!</div>
     <div id="opener-number" style="font-size: 1.3rem; font-weight: 700; margin-bottom: 0.5rem;">You are the #1 OPENer</div>
     
-    <!-- 大型化した画像エリア（お好きな画像URLやファイル名に差し替え可能） -->
     <div class="mosaic-box">
       <img id="display-image" src="https://via.placeholder.com/400/111111/ffffff?text=OpenLimit" alt="OpenLimit Content">
     </div>
@@ -152,19 +150,18 @@
 
   <script>
     const MAX_USERS = 10;
-    const LIMIT_SECONDS = 30; // 30秒強制終了
-    let currentUsers = 9;     // 1枠空けた状態
+    const LIMIT_SECONDS = 30;
+    let currentUsers = 0; // 0人スタート
 
-    // ローカルストレージから累計カウントを読み込み（なければ0スタート）
     let totalOpens = parseInt(localStorage.getItem('openlimit_total_opens') || '0', 10);
     let userLang = navigator.language.startsWith('ja') ? 'ja' : 'en';
 
-    // 初期カウント表示更新
     updateCounterUI();
 
     function updateCounterUI() {
       const countEl = document.getElementById('total-count');
       if (countEl) countEl.innerText = totalOpens.toLocaleString();
+      document.getElementById('current-user-count').innerText = currentUsers;
 
       if (userLang === 'ja') {
         document.getElementById('total-count-label').innerHTML = `累計OPEN回数: <span id="total-count">${totalOpens.toLocaleString()}</span>`;
@@ -184,7 +181,6 @@
     }
 
     function enterOpenRoom() {
-      // 開くごとにカウントを増やす＆保存
       totalOpens++;
       localStorage.setItem('openlimit_total_opens', totalOpens);
 
@@ -198,6 +194,4 @@
         document.getElementById('opener-number').innerText = `You are the #${totalOpens.toLocaleString()} OPENer`;
       }
 
-      // 30秒タイマー開始
-      let timeLeft = LIMIT_SECONDS;
-      const timerEl = document.getElementById('timer');
+      let timeLeft
