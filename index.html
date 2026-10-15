@@ -140,21 +140,21 @@
   <!-- 画面1：待機画面 -->
   <div id="screen-locked" style="text-align: center; width: 100%;">
     <div class="brand-title">OpenLimit</div>
-    <div class="counter">累計OPEN回数: <span id="total-count-val">...</span></div>
-    <div class="waiting-counter">現在待機中のユーザー: <span id="waiting-users-val" style="color: #007aff; font-weight:700;">0</span> 人</div>
+    <div class="counter"><span id="lbl-total-counter">累計OPEN回数</span>: <span id="total-count-val">...</span></div>
+    <div class="waiting-counter"><span id="lbl-waiting-users">現在待機中のユーザー</span>: <span id="waiting-users-val" style="color: #007aff; font-weight:700;">0</span> <span id="lbl-unit-people">人</span></div>
 
     <div id="status-display" class="status">
       <span id="status-text">OPEN</span> (<span id="active-users-val">0</span>/10)
     </div>
     
-    <button id="main-btn" class="btn">扉を開ける</button>
+    <button id="main-btn" class="btn">OPEN</button>
   </div>
 
   <!-- 画面2：30秒間の開放画面 -->
   <div id="screen-unlocked" class="hidden" style="text-align: center; width: 100%;">
     <div class="brand-title">OpenLimit</div>
     <div class="counter" style="color: #32d74b; font-weight:700;">CONGRATULATIONS!</div>
-    <div id="opener-number" style="font-size: 1.2rem; font-weight: 700; margin-bottom: 0.5rem;">あなたは ... 人目の OPENer です！</div>
+    <div id="opener-number" style="font-size: 1.2rem; font-weight: 700; margin-bottom: 0.5rem;">...</div>
     
     <div class="mosaic-box">
       <img src="https://via.placeholder.com/400/111111/ffffff?text=OpenLimit" alt="OpenLimit Content">
@@ -166,6 +166,28 @@
   <div class="footer-note">OpenLimit &copy; 2026 — 10 Users / 30 Seconds Limit</div>
 
   <script>
+    // --- 多言語辞書 (i18n) ---
+    const userLang = (navigator.language || navigator.userLanguage || 'en').toLowerCase();
+    const isJapanese = userLang.startsWith('ja');
+
+    const i18n = {
+      totalCounter: isJapanese ? '累計OPEN回数' : 'Total Opens',
+      waitingUsers: isJapanese ? '現在待機中のユーザー' : 'Waiting Users',
+      unitPeople: isJapanese ? '人' : '',
+      btnOpen: isJapanese ? '扉を開ける' : 'OPEN',
+      btnFull: isJapanese ? '満員です' : 'FULL',
+      openerText: (num) => isJapanese ? `あなたは ${num} 人目の OPENer です！` : `You are OPENer #${num}!`,
+      alertTimeout: isJapanese ? '30秒が経過しました。強制ログアウトします。' : '30 seconds have passed. Auto logged out.',
+      alertFull: isJapanese ? '現在満員です（10/10）。時間をおいて再度お試しください。' : 'Currently FULL (10/10). Please try again later.'
+    };
+
+    // 初期言語設定を反映
+    document.getElementById('lbl-total-counter').innerText = i18n.totalCounter;
+    document.getElementById('lbl-waiting-users').innerText = i18n.waitingUsers;
+    document.getElementById('lbl-unit-people').innerText = i18n.unitPeople;
+    document.getElementById('main-btn').innerText = i18n.btnOpen;
+
+    // --- Firebase設定 ---
     const firebaseConfig = {
       databaseURL: "https://openlimit-f7d81-default-rtdb.firebaseio.com"
     };
@@ -212,36 +234,34 @@
         if (statusTextEl) statusTextEl.innerText = 'FULL';
         if (statusDisplayEl) statusDisplayEl.classList.add('status-full');
         btnEl.disabled = true;
-        btnEl.innerText = '満員です';
+        btnEl.innerText = i18n.btnFull;
       } else {
         if (statusTextEl) statusTextEl.innerText = 'OPEN';
         if (statusDisplayEl) statusDisplayEl.classList.remove('status-full');
         btnEl.disabled = false;
-        btnEl.innerText = '扉を開ける';
+        btnEl.innerText = i18n.btnOpen;
       }
     });
 
-    // 「扉を開ける」ボタンクリック時の処理
+    // 「扉を開ける / OPEN」ボタンアクション
     document.getElementById('main-btn').addEventListener('click', function() {
       if (currentActiveUsers >= MAX_USERS) {
-        alert('現在満員です（10/10）。時間をおいて再度お試しください。');
+        alert(i18n.alertFull);
         return;
       }
 
       const btnEl = document.getElementById('main-btn');
       btnEl.disabled = true;
 
-      // データベース側で排他制御をかけて確実に1加算し、決定した最新値を受け取る
       db.ref('totalOpens').transaction((current) => {
         return (current || 0) + 1;
       }, (error, committed, snapshot) => {
         if (error || !committed) {
           btnEl.disabled = false;
-          alert('エラーが発生しました。再度お試しください。');
+          alert('Error occurred. Please try again.');
           return;
         }
 
-        // DB側で確定した最新の累計値
         const finalOpenNumber = snapshot.val();
 
         if (myWaitingRef) {
@@ -254,7 +274,7 @@
 
         document.getElementById('screen-locked').classList.add('hidden');
         document.getElementById('screen-unlocked').classList.remove('hidden');
-        document.getElementById('opener-number').innerText = `あなたは ${finalOpenNumber.toLocaleString()} 人目の OPENer です！`;
+        document.getElementById('opener-number').innerText = i18n.openerText(finalOpenNumber.toLocaleString());
 
         let timeLeft = 30;
         const timerEl = document.getElementById('timer');
@@ -267,7 +287,7 @@
           if (timeLeft <= 0) {
             clearInterval(interval);
             if (myActiveRef) myActiveRef.remove();
-            alert('30秒が経過しました。強制ログアウトします。');
+            alert(i18n.alertTimeout);
             location.reload();
           }
         }, 1000);
