@@ -15,17 +15,17 @@
       justify-content: center;
       min-height: 100vh;
       margin: 0;
-      padding: 0.8rem;
+      padding: 1rem;
       box-sizing: border-box;
       overflow-x: hidden;
       user-select: none;
     }
 
     .brand-title {
-      font-size: 2.2rem;
+      font-size: 2.5rem;
       font-weight: 800;
       letter-spacing: 0.15em;
-      margin-bottom: 0.3rem;
+      margin-bottom: 0.8rem;
       background: linear-gradient(135deg, #ffffff 0%, #888888 100%);
       -webkit-background-clip: text;
       -webkit-text-fill-color: transparent;
@@ -33,24 +33,24 @@
     }
 
     .counter {
-      font-size: 0.95rem;
+      font-size: 1.1rem;
       color: #888;
-      margin-bottom: 0.2rem;
-      letter-spacing: 0.05em;
-    }
-
-    .waiting-counter {
-      font-size: 0.85rem;
-      color: #aaa;
       margin-bottom: 0.5rem;
       letter-spacing: 0.05em;
     }
 
+    .waiting-counter {
+      font-size: 1rem;
+      color: #aaa;
+      margin-bottom: 1.5rem;
+      letter-spacing: 0.05em;
+    }
+
     .status {
-      font-size: 1.5rem;
+      font-size: 2rem;
       font-weight: 700;
-      margin-top: 0.4rem;
-      margin-bottom: 0.4rem;
+      margin-top: 1rem;
+      margin-bottom: 1.5rem;
       letter-spacing: 0.05em;
       color: #32d74b;
     }
@@ -60,8 +60,8 @@
     }
 
     .btn {
-      padding: 14px 40px;
-      font-size: 1rem;
+      padding: 18px 52px;
+      font-size: 1.2rem;
       background: #ffffff;
       color: #000000;
       border: none;
@@ -70,8 +70,7 @@
       font-weight: 700;
       letter-spacing: 0.1em;
       transition: all 0.2s ease;
-      box-shadow: 0 4px 20px rgba(255, 255, 255, 0.15);
-      margin-top: 0.4rem;
+      box-shadow: 0 4px 20px rgba(255, 255, 255, 0.2);
     }
 
     .btn:disabled {
@@ -83,51 +82,26 @@
 
     .btn:hover:not(:disabled) {
       transform: translateY(-2px);
-      box-shadow: 0 6px 25px rgba(255, 255, 255, 0.25);
+      box-shadow: 0 6px 25px rgba(255, 255, 255, 0.3);
     }
 
     .timer {
-      font-size: 3.5rem;
+      font-size: 4rem;
       font-weight: 800;
       color: #ff3b30;
-      margin-top: 0.5rem;
+      margin-top: 1rem;
       font-variant-numeric: tabular-nums;
       text-shadow: 0 0 20px rgba(255, 59, 48, 0.4);
     }
 
-    /* 画面サイズに合わせて自動縮小する動画プレイヤー（画面外はみ出し防止） */
-    .video-preview-box {
-      width: 180px;
-      height: 320px;
-      max-width: 70vw;
-      max-height: 38vh;
-      background: #111;
-      border-radius: 16px;
-      margin: 0.3rem auto;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      border: 1px solid #333;
-      box-shadow: 0 10px 30px rgba(0,0,0,0.8);
-      position: relative;
-      overflow: hidden;
-    }
-
-    .video-preview-box iframe {
-      width: 100%;
-      height: 100%;
-      border: none;
-      border-radius: 16px;
-    }
-
     .mosaic-box {
-      width: 300px;
-      max-width: 80vw;
-      height: 300px;
-      max-height: 80vw;
+      width: 320px;
+      max-width: 85vw;
+      height: 320px;
+      max-height: 85vw;
       background: #111;
       border-radius: 20px;
-      margin: 0.8rem auto;
+      margin: 1rem auto;
       display: flex;
       align-items: center;
       justify-content: center;
@@ -149,9 +123,9 @@
     }
 
     .footer-note {
-      position: relative;
-      margin-top: 1.5rem;
-      font-size: 0.75rem;
+      position: absolute;
+      bottom: 1.5rem;
+      font-size: 0.8rem;
       color: #444;
       letter-spacing: 0.05em;
     }
@@ -163,20 +137,11 @@
 </head>
 <body>
 
-  <!-- 画面1：待機画面 -->
+  <!-- 画面1：待機画面（動画を完全に削除） -->
   <div id="screen-locked" style="text-align: center; width: 100%;">
     <div class="brand-title">OpenLimit</div>
     <div class="counter">累計OPEN回数: <span id="total-count-val">...</span></div>
     <div class="waiting-counter">現在待機中のユーザー: <span id="waiting-users-val" style="color: #007aff; font-weight:700;">0</span> 人</div>
-    
-    <div class="video-preview-box">
-      <iframe 
-        src="https://www.youtube.com/embed/FUaDAHyyvPM?autoplay=1&mute=1&loop=1&playlist=FUaDAHyyvPM&controls=0&rel=0" 
-        title="LUCKYオモーチー YouTube Short Preview" 
-        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
-        allowfullscreen>
-      </iframe>
-    </div>
 
     <div id="status-display" class="status">
       <span id="status-text">OPEN</span> (<span id="active-users-val">0</span>/10)
@@ -256,7 +221,7 @@
       }
     });
 
-    // 「扉を開ける」アクション
+    // 「扉を開ける」ボタンクリック時の処理
     document.getElementById('main-btn').addEventListener('click', function() {
       if (currentActiveUsers >= MAX_USERS) {
         alert('現在満員です（10/10）。時間をおいて再度お試しください。');
