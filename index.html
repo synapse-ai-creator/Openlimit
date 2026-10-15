@@ -137,7 +137,7 @@
 </head>
 <body>
 
-  <!-- 画面1：待機画面（動画を完全に削除） -->
+  <!-- 画面1：待機画面 -->
   <div id="screen-locked" style="text-align: center; width: 100%;">
     <div class="brand-title">OpenLimit</div>
     <div class="counter">累計OPEN回数: <span id="total-count-val">...</span></div>
@@ -196,7 +196,7 @@
       document.getElementById('waiting-users-val').innerText = waitingCount;
     });
 
-    // 4. 同時接続人数監視（上限10人制御）
+    // 4. 同時接続人数監視
     db.ref('activeSessions').on('value', (snapshot) => {
       const activeData = snapshot.val() || {};
       currentActiveUsers = Object.keys(activeData).length;
@@ -228,37 +228,50 @@
         return;
       }
 
-      if (myWaitingRef) {
-        myWaitingRef.remove();
-      }
+      const btnEl = document.getElementById('main-btn');
+      btnEl.disabled = true;
 
+      // データベース側で排他制御をかけて確実に1加算し、決定した最新値を受け取る
       db.ref('totalOpens').transaction((current) => {
         return (current || 0) + 1;
-      });
-
-      myActiveRef = db.ref('activeSessions').push();
-      myActiveRef.set(true);
-      myActiveRef.onDisconnect().remove();
-
-      document.getElementById('screen-locked').classList.add('hidden');
-      document.getElementById('screen-unlocked').classList.remove('hidden');
-      document.getElementById('opener-number').innerText = `あなたは ${currentGlobalOpens + 1} 人目の OPENer です！`;
-
-      let timeLeft = 30;
-      const timerEl = document.getElementById('timer');
-      
-      const interval = setInterval(() => {
-        timeLeft--;
-        let sec = timeLeft < 10 ? '0' + timeLeft : timeLeft;
-        timerEl.innerText = `00:${sec}`;
-
-        if (timeLeft <= 0) {
-          clearInterval(interval);
-          if (myActiveRef) myActiveRef.remove();
-          alert('30秒が経過しました。強制ログアウトします。');
-          location.reload();
+      }, (error, committed, snapshot) => {
+        if (error || !committed) {
+          btnEl.disabled = false;
+          alert('エラーが発生しました。再度お試しください。');
+          return;
         }
-      }, 1000);
+
+        // DB側で確定した最新の累計値
+        const finalOpenNumber = snapshot.val();
+
+        if (myWaitingRef) {
+          myWaitingRef.remove();
+        }
+
+        myActiveRef = db.ref('activeSessions').push();
+        myActiveRef.set(true);
+        myActiveRef.onDisconnect().remove();
+
+        document.getElementById('screen-locked').classList.add('hidden');
+        document.getElementById('screen-unlocked').classList.remove('hidden');
+        document.getElementById('opener-number').innerText = `あなたは ${finalOpenNumber.toLocaleString()} 人目の OPENer です！`;
+
+        let timeLeft = 30;
+        const timerEl = document.getElementById('timer');
+        
+        const interval = setInterval(() => {
+          timeLeft--;
+          let sec = timeLeft < 10 ? '0' + timeLeft : timeLeft;
+          timerEl.innerText = `00:${sec}`;
+
+          if (timeLeft <= 0) {
+            clearInterval(interval);
+            if (myActiveRef) myActiveRef.remove();
+            alert('30秒が経過しました。強制ログアウトします。');
+            location.reload();
+          }
+        }, 1000);
+      });
     });
   </script>
 </body>
