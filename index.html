@@ -178,12 +178,23 @@
   <div class="footer-note">OpenLimit &copy; 2026 — 10 Users / 30 Seconds Limit</div>
 
   <script>
-    let totalOpens = parseInt(localStorage.getItem('openlimit_total_opens') || '0', 10);
+    // 保存用キー名を固定（絶対に変更・削除しない固定ID）
+    const STORAGE_KEY = 'OPENLIMIT_PERMANENT_COUNTER_V1';
+
+    // 過去の古い保存データがあれば自動で引継ぎ、なければ0からスタート
+    let savedVal = localStorage.getItem(STORAGE_KEY) || localStorage.getItem('openlimit_total_opens') || '0';
+    let totalOpens = parseInt(savedVal, 10);
+
+    // 最新の固定キーに確実に保存
+    localStorage.setItem(STORAGE_KEY, totalOpens);
+
+    // UI初期反映
     document.getElementById('total-count-val').innerText = totalOpens.toLocaleString();
 
     document.getElementById('main-btn').addEventListener('click', function() {
+      // カウントアップ＆永続保存
       totalOpens++;
-      localStorage.setItem('openlimit_total_opens', totalOpens);
+      localStorage.setItem(STORAGE_KEY, totalOpens);
 
       document.getElementById('screen-locked').classList.add('hidden');
       document.getElementById('screen-unlocked').classList.remove('hidden');
