@@ -142,10 +142,10 @@
 </head>
 <body>
 
-  <!-- 画面1：待機画面（開ける前にShorts動画を表示） -->
+  <!-- 画面1：待機画面 -->
   <div id="screen-locked" style="text-align: center;">
     <div class="brand-title">OpenLimit</div>
-    <div class="counter">累計OPEN回数: <span id="total-count-val">0</span></div>
+    <div class="counter">累計OPEN回数: <span id="total-count-val">...</span></div>
     
     <!-- 開く前専用のYouTube動画プレビュー -->
     <div class="video-preview-box">
@@ -161,11 +161,11 @@
     <button id="main-btn" class="btn">扉を開ける</button>
   </div>
 
-  <!-- 画面2：30秒間の開放画面（動画なし・画像＆タイマーのみ） -->
+  <!-- 画面2：30秒間の開放画面 -->
   <div id="screen-unlocked" class="hidden" style="text-align: center;">
     <div class="brand-title">OpenLimit</div>
     <div class="counter" style="color: #32d74b; font-weight:700;">CONGRATULATIONS!</div>
-    <div id="opener-number" style="font-size: 1.3rem; font-weight: 700; margin-bottom: 0.5rem;">あなたは 1 人目の OPENer です！</div>
+    <div id="opener-number" style="font-size: 1.3rem; font-weight: 700; margin-bottom: 0.5rem;">あなたは ... 人目の OPENer です！</div>
     
     <!-- 開放後の大型画像表示エリア -->
     <div class="mosaic-box">
@@ -178,27 +178,51 @@
   <div class="footer-note">OpenLimit &copy; 2026 — 10 Users / 30 Seconds Limit</div>
 
   <script>
-    // 保存用キー名を固定（絶対に変更・削除しない固定ID）
-    const STORAGE_KEY = 'OPENLIMIT_PERMANENT_COUNTER_V1';
+    // Firebase Database URL
+    const DB_URL = 'https://openlimit-f7d81-default-rtdb.firebaseio.com';
 
-    // 過去の古い保存データがあれば自動で引継ぎ、なければ0からスタート
-    let savedVal = localStorage.getItem(STORAGE_KEY) || localStorage.getItem('openlimit_total_opens') || '0';
-    let totalOpens = parseInt(savedVal, 10);
+    let globalOpens = 0;
 
-    // 最新の固定キーに確実に保存
-    localStorage.setItem(STORAGE_KEY, totalOpens);
+    // データベースから最新のリアルタイムカウントを取得
+    async function fetchGlobalCount() {
+      try {
+        const res = await fetch(`${DB_URL}/totalOpens.json`);
+        const data = await res.json();
+        if (data !== null) {
+          globalOpens = data;
+          document.getElementById('total-count-val').innerText = globalOpens.toLocaleString();
+        }
+      } catch (e) {
+        console.error('DB Fetch Error:', e);
+      }
+    }
 
-    // UI初期反映
-    document.getElementById('total-count-val').innerText = totalOpens.toLocaleString();
+    // カウントを世界共有DBに加算保存
+    async function incrementGlobalCount() {
+      globalOpens++;
+      document.getElementById('total-count-val').innerText = globalOpens.toLocaleString();
 
-    document.getElementById('main-btn').addEventListener('click', function() {
-      // カウントアップ＆永続保存
-      totalOpens++;
-      localStorage.setItem(STORAGE_KEY, totalOpens);
+      try {
+        await fetch(`${DB_URL}/totalOpens.json`, {
+          method: 'PUT',
+          body: JSON.stringify(globalOpens)
+        });
+      } catch (e) {
+        console.error('DB Sync Error:', e);
+      }
+    }
+
+    // 初回読み込み＆2秒ごとに全端末で最新カウントをリアルタイム同期
+    fetchGlobalCount();
+    setInterval(fetchGlobalCount, 2000);
+
+    document.getElementById('main-btn').addEventListener('click', async function() {
+      // データベースのカウントを加算
+      await incrementGlobalCount();
 
       document.getElementById('screen-locked').classList.add('hidden');
       document.getElementById('screen-unlocked').classList.remove('hidden');
-      document.getElementById('opener-number').innerText = `あなたは ${totalOpens.toLocaleString()} 人目の OPENer です！`;
+      document.getElementById('opener-number').innerText = `あなたは ${globalOpens.toLocaleString()} 人目の OPENer です！`;
 
       // 30秒タイマー起動
       let timeLeft = 30;
