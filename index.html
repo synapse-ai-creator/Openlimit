@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>OpenLimit</title>
+  <style>
+    body {
+      background-color: #050505;
+      color: #e0e0e0;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, monospace;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+      margin: 0;
+      overflow: hidden;
+      user-select: none;
+    }
+
+    .brand-title {
+      font-size: 2.5rem;
+      font-weight: 800;
+      letter-spacing: 0.15em;
+      margin-bottom: 0.5rem;
+      background: linear-gradient(135deg, #ffffff 0%, #888888 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      text-transform: uppercase;
+    }
+
+    .counter {
+      font-size: 1rem;
+      color: #666;
+      margin-bottom: 2rem;
+      letter-spacing: 0.05em;
+    }
+
+    .status {
+      font-size: 1.8rem;
+      font-weight: 700;
+      margin-bottom: 1.5rem;
+      letter-spacing: 0.05em;
+    }
+
+    .status-locked {
+      color: #ff453a;
+    }
+
+    .status-unlocked {
+      color: #32d74b;
+    }
+
+    .btn {
+      padding: 16px 48px;
+      font-size: 1.1rem;
+      background: #ffffff;
+      color: #000000;
+      border: none;
+      border-radius: 30px;
+      cursor: pointer;
+      font-weight: 700;
+      letter-spacing: 0.1em;
+      transition: all 0.2s ease;
+      box-shadow: 0 4px 20px rgba(255, 255, 255, 0.15);
+    }
+
+    .btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 25px rgba(255, 255, 255, 0.25);
+    }
+
+    .btn:active {
+      transform: translateY(1px);
+    }
+
+    .timer {
+      font-size: 4.5rem;
+      font-weight: 800;
+      color: #ff3b30;
+      margin-top: 1.5rem;
+      font-variant-numeric: tabular-nums;
+      text-shadow: 0 0 20px rgba(255, 59, 48, 0.4);
+    }
+
+    .mosaic-box {
+      width: 180px;
+      height: 180px;
+      background: #111;
+      border-radius: 16px;
+      margin: 1.5rem auto;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border: 1px solid #333;
+      box-shadow: inset 0 0 15px rgba(0,0,0,0.8);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .mosaic-face {
+      width: 100%;
+      height: 100%;
+      background: radial-gradient(circle, #ffe0bd 30%, #4a2e18 90%);
+      filter: blur(14px) contrast(150%);
+      transform: scale(1.2);
+    }
+
+    .hidden {
+      display: none !important;
+    }
+
+    .footer-note {
+      position: absolute;
+      bottom: 2rem;
+      font-size: 0.8rem;
+      color: #444;
+      letter-spacing: 0.05em;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- 画面1：待機 / 満員（FULL）画面 -->
+  <div id="screen-locked" style="text-align: center;">
+    <div class="brand-title">OpenLimit</div>
+    <div id="total-count-label" class="counter">Total OPENs: <span id="total-count">1,482,903</span></div>
+    <div id="status-label" class="status status-locked">FULL (10/10)</div>
+    <button id="open-btn" class="btn" onclick="tryOpen()">TRY TO OPEN</button>
+  </div>
+
+  <!-- 画面2：30秒間の開放画面 -->
+  <div id="screen-unlocked" class="hidden" style="text-align: center;">
+    <div class="brand-title">OpenLimit</div>
+    <div id="congrats-label" class="counter" style="color: #32d74b;">CONGRATULATIONS!</div>
+    <div id="opener-number" style="font-size: 1.4rem; font-weight: 700;">You are the #1,482,904 OPENer</div>
+    
+    <!-- モザイク画像エリア -->
+    <div class="mosaic-box">
+      <div class="mosaic-face"></div>
+    </div>
+    
+    <div id="timer" class="timer">00:30</div>
+  </div>
+
+  <div class="footer-note">OpenLimit &copy; 2026 — 10 Users / 30 Seconds Limit</div>
+
+  <script>
+    const MAX_USERS = 10;
+    const LIMIT_SECONDS = 30; // 30秒強制終了
+    let currentUsers = 10;    // デモ用初期値（満員）
+    let totalOpens = 1482903;
+    let userLang = navigator.language.startsWith('ja') ? 'ja' : 'en';
+
+    // 初期表示設定
+    if (userLang === 'ja') {
+      document.getElementById('total-count-label').innerHTML = `累計OPEN回数: <span id="total-count">${totalOpens.toLocaleString()}</span>`;
+      document.getElementById('open-btn').innerText = '扉を開ける';
+    }
+
+    function tryOpen() {
+      if (currentUsers >= MAX_USERS) {
+        alert(userLang === 'ja' 
+          ? '現在満員です（10/10）。時間をおいて再度お試しください。' 
+          : 'FULL! (10/10). Doors are locked.');
+        return;
+      }
+
+      enterOpenRoom();
+    }
+
+    function enterOpenRoom() {
+      totalOpens++;
+      document.getElementById('screen-locked').classList.add('hidden');
+      document.getElementById('screen-unlocked').classList.remove('hidden');
+
+      if (userLang === 'ja') {
+        document.getElementById('congrats-label').innerText = 'おめでとうございます！';
+        document.getElementById('opener-number').innerText = `あなたは 第 ${totalOpens.toLocaleString()} 目のOPEN者です`;
+      } else {
+        document.getElementById('opener-number').innerText = `You are the #${totalOpens.toLocaleString()} OPENer`;
+      }
+
+      // 30秒タイマー開始
+      let timeLeft = LIMIT_SECONDS;
+      const timerEl = document.getElementById('timer');
+      
+      const interval = setInterval(() => {
+        timeLeft--;
+        let sec = timeLeft < 10 ? '0' + timeLeft : timeLeft;
+        timerEl.innerText = `00:${sec}`;
+
+        if (timeLeft <= 0) {
+          clearInterval(interval);
+          alert(userLang === 'ja' 
+            ? '30秒が経過しました。強制ログアウトします。' 
+            : '30 seconds passed. Time is up!');
+          location.reload(); // 強制退出して初期画面へ
+        }
+      }, 1000);
+    }
+  </script>
+</body>
+</html>
